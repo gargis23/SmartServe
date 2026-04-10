@@ -7,9 +7,12 @@ import 'firebase_options.dart';
 // Import your existing screens
 import 'screens/auth/login_screen.dart';
 import 'screens/profile/profile_screen.dart';
-// Import your new Role-Based screens (Create these files next)
+// Import your new Role-Based screens
 import 'screens/admin/admin_dashboard.dart'; 
 import 'screens/staff/staff_dashboard.dart';
+// Add the import for your new Menu Home Screen!
+import 'screens/menu/menu_home_screen.dart'; 
+import 'screens/home/student_main_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -56,16 +59,13 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, authSnapshot) {
-        // 1. Initial connection check
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // 2. Check if the user is authenticated
         if (authSnapshot.hasData) {
           final String uid = authSnapshot.data!.uid;
 
-          // 3. Fetch Role from Firestore (Point 3: RBAC)
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance.collection('users').doc(uid).get(),
             builder: (context, userSnapshot) {
@@ -75,26 +75,27 @@ class AuthGate extends StatelessWidget {
 
               if (userSnapshot.hasData && userSnapshot.data!.exists) {
                 final userData = userSnapshot.data!.data() as Map<String, dynamic>;
-                final String role = userData['role'] ?? 'student';
+                
+                // FIX: Add .toLowerCase() to handle "STUDENT", "Student", or "student"
+                final String role = (userData['role'] ?? 'student').toString().toLowerCase();
 
-                // Point 3.3: Permission management via Navigation
                 switch (role) {
                   case 'admin':
                     return const AdminDashboard();
                   case 'staff':
                     return const StaffDashboard();
+                  case 'student':
                   default:
-                    return const ProfileScreen();
+                    // FIX: Route to the new Bottom Nav screen!
+                    return const StudentMainScreen(); 
                 }
               }
 
-              // Fallback if document is missing (log out and retry)
               return const LoginScreen();
             },
           );
         }
 
-        // 4. Not authenticated
         return const LoginScreen();
       },
     );
