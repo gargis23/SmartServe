@@ -11,6 +11,7 @@ class MenuItem {
   // NEW FIELDS added for the Detail Screen:
   final List<String> ingredients;
   final String calories;
+  final double rating;
 
   MenuItem({
     required this.itemId,
@@ -24,6 +25,7 @@ class MenuItem {
     required this.tags,
     required this.ingredients,
     required this.calories,
+    required this.rating,
   });
 
   factory MenuItem.fromFirestore(Map<String, dynamic> data, String id) {
@@ -41,6 +43,7 @@ class MenuItem {
       ingredients: List<String>.from(data['ingredients'] ?? ['Paneer', 'Lettuce', 'Mayo', 'Bun']),
       // Now fetching from Firebase, with fallbacks
       calories: data['calories']?.toString() ?? '450',
+      rating: (data['rating'] ?? 4.0).toDouble(),
     );
   }
 }

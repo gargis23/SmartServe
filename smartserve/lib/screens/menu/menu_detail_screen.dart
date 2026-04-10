@@ -118,11 +118,12 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildInfoStat(Icons.local_fire_department, '${widget.item.calories} kcal'),
-                              Container(width: 1, height: 30, color: Colors.grey[300]),
-                              _buildInfoStat(Icons.access_time_filled, '${widget.item.preparationTime} min'),
-                              Container(width: 1, height: 30, color: Colors.grey[300]),
-                              _buildInfoStat(Icons.star, '4.8'), // Hardcoded for now, can map to Firebase rating later
+                                _buildInfoStat(Icons.local_fire_department, '${widget.item.calories} kcal'),
+                                Container(width: 1, height: 30, color: Colors.grey[300]),
+                                _buildInfoStat(Icons.access_time_filled, '${widget.item.preparationTime} min'),
+                                Container(width: 1, height: 30, color: Colors.grey[300]),
+                                // FIX: Now uses dynamic rating!
+                                _buildInfoStat(Icons.star, widget.item.rating.toStringAsFixed(1)),
                             ],
                           ),
                         ),

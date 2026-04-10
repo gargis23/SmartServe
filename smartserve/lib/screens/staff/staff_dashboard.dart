@@ -135,6 +135,16 @@ class _StaffDashboardState extends State<StaffDashboard> {
                 _menuService.toggleAvailability(item.itemId, item.isAvailable);
               },
             ),
+            // NEW: Edit Button!
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: Colors.blue),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddMenuItemScreen(itemToEdit: item)),
+                );
+              },
+            ),
             // Delete Button
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red),
