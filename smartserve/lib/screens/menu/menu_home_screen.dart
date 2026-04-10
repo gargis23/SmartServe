@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../models/menu_item_model.dart';
 import '../../services/menu_service.dart';
 import '../../widgets/menu_item_card.dart';
-import 'menu_detail_screen.dart'; // Uncomment when you create the detail screen
+import 'menu_detail_screen.dart'; 
 
 class MenuHomeScreen extends StatefulWidget {
   const MenuHomeScreen({Key? key}) : super(key: key);
@@ -18,6 +18,62 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   final MenuService _menuService = MenuService();
   String selectedCategory = 'All';
   final List<String> categories = ['All', 'Meals', 'Snacks', 'Beverages', 'Desserts'];
+  
+  // Search Controller and Query
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // Beautiful Search Bar Widget
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              searchQuery = value.toLowerCase();
+            });
+          },
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            icon: const Icon(Icons.search, color: Colors.grey),
+            hintText: 'Search for food...',
+            hintStyle: GoogleFonts.inter(color: Colors.grey),
+            suffixIcon: searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {
+                        searchQuery = '';
+                      });
+                    },
+                  )
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,10 +91,13 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
           ),
         ),
         actions: [
+          // We can leave this icon here, or you can remove it since we now have a full search bar below!
           IconButton(
-            icon: const Icon(Icons.search, color: Colors.black87),
+            icon: const Icon(Icons.notifications_none, color: Colors.black87), // Changed to a notification bell
             onPressed: () {
-              // TODO: Implement Search (Member 2 Sprint 2 task)
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications coming soon!')),
+              );
             },
           ),
         ],
@@ -46,7 +105,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Greeting & Categories
+          // Greeting, Search & Categories
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -61,6 +120,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                _buildSearchBar(), // --> Search Bar is injected here!
                 _buildCategoryList(),
               ],
             ),
@@ -83,7 +143,18 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
                   );
                 }
 
-                final items = snapshot.data!;
+                // -> SEARCH FILTERING LOGIC HAPPENS HERE <-
+                var items = snapshot.data!;
+                if (searchQuery.isNotEmpty) {
+                  items = items.where((item) => item.name.toLowerCase().contains(searchQuery)).toList();
+                }
+
+                if (items.isEmpty) {
+                  return Center(
+                    child: Text('No matching food found.', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600])),
+                  );
+                }
+
                 return AnimationLimiter(
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
