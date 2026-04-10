@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -24,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
       
-      // FIXED: Using positional arguments to match your AuthService definition
+      // Using positional arguments to match your AuthService definition
       final user = await _authService.registerUser(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -32,19 +33,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _selectedRole,
       );
 
-      // FIXED: Added mounted check before using BuildContext across async gap
+      // Added mounted check before using BuildContext across async gap
       if (!mounted) return;
 
       setState(() => _isLoading = false);
 
       if (user != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Account created successfully! Please Login.")),
+          const SnackBar(content: Text("Account created successfully! Please Login."), backgroundColor: Colors.green),
         );
         Navigator.pop(context); 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Registration failed. Please check your details.")),
+          const SnackBar(content: Text("Registration failed. Please check your details."), backgroundColor: Colors.red),
         );
       }
     }
@@ -53,63 +54,148 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Join SmartServe")),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 16.0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Create an Account",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.orange),
+                // Premium Logo
+                Row(
+                  children: [
+                    const Icon(Icons.restaurant, color: Color(0xFFFF6B6B), size: 40),
+                    const SizedBox(width: 12),
+                    Text(
+                      'SmartServe',
+                      style: GoogleFonts.poppins(color: const Color(0xFFFF6B6B), fontWeight: FontWeight.w900, fontSize: 36, letterSpacing: -1),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                TextFormField(
+                const SizedBox(height: 16),
+                Text('Join Us,', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
+                Text('Create an account to start ordering.', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600])),
+                const SizedBox(height: 40),
+
+                // Name Field
+                _buildPremiumTextField(
                   controller: _nameController,
-                  decoration: const InputDecoration(labelText: "Full Name", border: OutlineInputBorder()),
+                  hintText: "Full Name",
+                  icon: Icons.person_outline,
                   validator: (val) => val!.isEmpty ? "Enter your name" : null,
                 ),
-                const SizedBox(height: 15),
-                TextFormField(
+                const SizedBox(height: 16),
+
+                // Email Field
+                _buildPremiumTextField(
                   controller: _emailController,
-                  decoration: const InputDecoration(labelText: "Email Address", border: OutlineInputBorder()),
+                  hintText: "College Email",
+                  icon: Icons.email_outlined,
                   validator: (val) => val!.contains("@") ? null : "Enter a valid email",
                 ),
-                const SizedBox(height: 15),
-                TextFormField(
+                const SizedBox(height: 16),
+
+                // Password Field
+                _buildPremiumTextField(
                   controller: _passwordController,
+                  hintText: "Password",
+                  icon: Icons.lock_outline,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: "Password", border: OutlineInputBorder()),
                   validator: (val) => val!.length < 6 ? "Minimum 6 characters" : null,
                 ),
-                const SizedBox(height: 20),
-                // FIXED: Changed 'value' to 'initialValue' for modern Flutter versions
-                DropdownButtonFormField(
-                  initialValue: _selectedRole,
-                  decoration: const InputDecoration(labelText: "I am a...", border: OutlineInputBorder()),
-                  items: _roles.map((role) => DropdownMenuItem(
-                    value: role, 
-                    child: Text(role.toUpperCase()))
-                  ).toList(),
-                  onChanged: (val) => setState(() => _selectedRole = val as String),
-                ),
-                const SizedBox(height: 30),
-                _isLoading 
-                  ? const Center(child: CircularProgressIndicator()) 
-                  : ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
-                      ),
-                      onPressed: _handleRegister,
-                      child: const Text("REGISTER", style: TextStyle(color: Colors.white, fontSize: 16)),
+                const SizedBox(height: 16),
+
+                // Role Dropdown
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white, 
+                    borderRadius: BorderRadius.circular(16), 
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))]
+                  ),
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.admin_panel_settings_outlined, color: Colors.grey),
+                      border: InputBorder.none, 
+                      contentPadding: EdgeInsets.all(16),
                     ),
+                    items: _roles.map((role) => DropdownMenuItem(
+                      value: role, 
+                      child: Text(role.toUpperCase(), style: GoogleFonts.inter(color: Colors.black87))
+                    )).toList(),
+                    onChanged: (val) => setState(() => _selectedRole = val as String),
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // Register Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF6B6B),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    child: _isLoading 
+                      ? const CircularProgressIndicator(color: Colors.white) 
+                      : Text("REGISTER", style: GoogleFonts.poppins(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Back to Login Link
+                Center(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "Already have an account? Login here",
+                      style: GoogleFonts.inter(color: Colors.black87, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helper widget to keep code clean
+  Widget _buildPremiumTextField({
+    required TextEditingController controller, 
+    required String hintText, 
+    required IconData icon, 
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white, 
+        borderRadius: BorderRadius.circular(16), 
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))]
+      ),
+      child: TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hintText, 
+          hintStyle: GoogleFonts.inter(color: Colors.grey),
+          prefixIcon: Icon(icon, color: Colors.grey), 
+          border: InputBorder.none, 
+          contentPadding: const EdgeInsets.all(16)
         ),
       ),
     );

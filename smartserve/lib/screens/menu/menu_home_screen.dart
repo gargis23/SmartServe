@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../models/menu_item_model.dart';
 import '../../services/menu_service.dart';
 import '../../widgets/menu_item_card.dart';
-import 'menu_detail_screen.dart'; 
+import 'menu_detail_screen.dart';
 
 class MenuHomeScreen extends StatefulWidget {
   const MenuHomeScreen({Key? key}) : super(key: key);
@@ -19,9 +19,11 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   String selectedCategory = 'All';
   final List<String> categories = ['All', 'Meals', 'Snacks', 'Beverages', 'Desserts'];
   
-  // Search Controller and Query
+  // Search & Filter State
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
+  bool _vegOnly = false;
+  double _maxPrice = 500.0; // High default so it shows everything initially
 
   @override
   void dispose() {
@@ -29,48 +31,173 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
     super.dispose();
   }
 
-  // Beautiful Search Bar Widget
+  // Opens the Advanced Filter Bottom Sheet
+  void _openFilterSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Filters', style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
+                      Row(
+                        children: [
+                          // NEW: Clear Button only shows if filters are active
+                          if (_vegOnly || _maxPrice < 500)
+                            TextButton(
+                              onPressed: () {
+                                setModalState(() { _vegOnly = false; _maxPrice = 500.0; });
+                                setState(() { _vegOnly = false; _maxPrice = 500.0; });
+                                Navigator.pop(context); // Close sheet after clearing
+                              },
+                              child: Text('Clear', style: GoogleFonts.poppins(color: Colors.red, fontWeight: FontWeight.w600)),
+                            ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Veg Only Toggle
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(16)),
+                    child: SwitchListTile(
+                      title: Text('Veg Only', style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.green[800])),
+                      value: _vegOnly,
+                      activeColor: Colors.green,
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) {
+                        setModalState(() => _vegOnly = val);
+                        setState(() => _vegOnly = val); // Updates the main screen too
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Price Slider
+                  Text('Max Price: ₹${_maxPrice.toInt()}', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+                  SliderTheme(
+                    data: SliderThemeData(
+                      activeTrackColor: const Color(0xFFFF6B6B),
+                      thumbColor: const Color(0xFFFF6B6B),
+                      overlayColor: const Color(0xFFFF6B6B).withOpacity(0.2),
+                    ),
+                    child: Slider(
+                      value: _maxPrice,
+                      min: 0,
+                      max: 500,
+                      divisions: 10,
+                      label: '₹${_maxPrice.toInt()}',
+                      onChanged: (val) {
+                        setModalState(() => _maxPrice = val);
+                        setState(() => _maxPrice = val);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Apply Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black87,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Text('Apply Filters', style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+        );
+      },
+    );
+  }
+
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+      child: Row(
+        children: [
+          // The Search Bar
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => searchQuery = value.toLowerCase()),
+                decoration: InputDecoration(
+                  border: InputBorder.none,
+                  icon: const Icon(Icons.search, color: Colors.grey),
+                  hintText: 'Search for food...',
+                  hintStyle: GoogleFonts.inter(color: Colors.grey),
+                  suffixIcon: searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => searchQuery = '');
+                          },
+                        )
+                      : null,
+                ),
+              ),
             ),
-          ],
-        ),
-        child: TextField(
-          controller: _searchController,
-          onChanged: (value) {
-            setState(() {
-              searchQuery = value.toLowerCase();
-            });
-          },
-          decoration: InputDecoration(
-            border: InputBorder.none,
-            icon: const Icon(Icons.search, color: Colors.grey),
-            hintText: 'Search for food...',
-            hintStyle: GoogleFonts.inter(color: Colors.grey),
-            suffixIcon: searchQuery.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.grey),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        searchQuery = '';
-                      });
-                    },
-                  )
-                : null,
           ),
-        ),
+          const SizedBox(width: 16),
+          // NEW: The Filter Button
+          GestureDetector(
+            onTap: _openFilterSheet,
+            child: Container(
+              height: 50,
+              width: 50,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF6B6B),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: const Color(0xFFFF6B6B).withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  const Icon(Icons.tune, color: Colors.white),
+                  // Small indicator dot if filters are active
+                  if (_vegOnly || _maxPrice < 500)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -78,80 +205,76 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA), // Off-white clean background
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text(
-          'SmartServe',
-          style: GoogleFonts.poppins(
-            color: Colors.black87,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
+        title: Row(
+          children: [
+            const Icon(Icons.restaurant, color: Color(0xFFFF6B6B), size: 28),
+            const SizedBox(width: 8),
+            Text(
+              'SmartServe',
+              style: GoogleFonts.poppins(
+                color: const Color(0xFFFF6B6B), // Brand Color
+                fontWeight: FontWeight.w900,   // Extra Bold
+                fontSize: 26,
+                letterSpacing: -0.5,           // Tighter tracking for logo feel
+              ),
+            ),
+          ],
         ),
-        actions: [
-          // We can leave this icon here, or you can remove it since we now have a full search bar below!
-          IconButton(
-            icon: const Icon(Icons.notifications_none, color: Colors.black87), // Changed to a notification bell
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications coming soon!')),
-              );
-            },
-          ),
-        ],
+        // title: Text('SmartServe', style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 24)),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Greeting, Search & Categories
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'What are you\ncraving today?',
-                  style: GoogleFonts.poppins(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    height: 1.2,
-                  ),
-                ),
+                Text('What are you\ncraving today?', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, height: 1.2)),
                 const SizedBox(height: 24),
-                _buildSearchBar(), // --> Search Bar is injected here!
+                _buildSearchBar(),
                 _buildCategoryList(),
               ],
             ),
           ),
           
-          // Menu Items List
           Expanded(
             child: StreamBuilder<List<MenuItem>>(
               stream: _menuService.getMenuItemsByCategory(selectedCategory),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildShimmerLoading();
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: Text('No items found.', style: GoogleFonts.inter()),
-                  );
-                }
+                if (snapshot.connectionState == ConnectionState.waiting) return _buildShimmerLoading();
+                if (snapshot.hasError) return Center(child: Text('Error: ${snapshot.error}'));
+                if (!snapshot.hasData || snapshot.data!.isEmpty) return Center(child: Text('No items found.', style: GoogleFonts.inter()));
 
-                // -> SEARCH FILTERING LOGIC HAPPENS HERE <-
                 var items = snapshot.data!;
+
+                // 1. Apply Search Filter
                 if (searchQuery.isNotEmpty) {
                   items = items.where((item) => item.name.toLowerCase().contains(searchQuery)).toList();
                 }
 
+                // 2. Apply Veg Only Filter
+                if (_vegOnly) {
+                  items = items.where((item) => !item.tags.contains('Non-Veg')).toList();
+                }
+
+                // 3. Apply Price Filter
+                items = items.where((item) => item.price <= _maxPrice).toList();
+
                 if (items.isEmpty) {
                   return Center(
-                    child: Text('No matching food found.', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600])),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 64, color: Colors.grey[400]),
+                        const SizedBox(height: 16),
+                        Text('No matching food found.', style: GoogleFonts.inter(fontSize: 16, color: Colors.grey[600])),
+                      ],
+                    ),
                   );
                 }
 
@@ -169,13 +292,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
                             child: MenuItemCard(
                               item: items[index],
                               onTap: () {
-                                // Navigate to Detail Screen
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => MenuDetailScreen(item: items[index]),
-                                  ),
-                                );
+                                Navigator.push(context, MaterialPageRoute(builder: (context) => MenuDetailScreen(item: items[index])));
                               },
                             ),
                           ),
@@ -203,11 +320,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
         itemBuilder: (context, index) {
           final isSelected = selectedCategory == categories[index];
           return GestureDetector(
-            onTap: () {
-              setState(() {
-                selectedCategory = categories[index];
-              });
-            },
+            onTap: () => setState(() => selectedCategory = categories[index]),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.only(right: 12),
@@ -215,17 +328,12 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
               decoration: BoxDecoration(
                 color: isSelected ? const Color(0xFFFF6B6B) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: isSelected
-                    ? [BoxShadow(color: const Color(0xFFFF6B6B).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))]
-                    : [],
+                boxShadow: isSelected ? [BoxShadow(color: const Color(0xFFFF6B6B).withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))] : [],
               ),
               child: Center(
                 child: Text(
                   categories[index],
-                  style: GoogleFonts.inter(
-                    color: isSelected ? Colors.white : Colors.black54,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
+                  style: GoogleFonts.inter(color: isSelected ? Colors.white : Colors.black54, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal),
                 ),
               ),
             ),
@@ -243,10 +351,7 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           height: 130,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)),
           child: Shimmer.fromColors(
             baseColor: Colors.grey[300]!,
             highlightColor: Colors.grey[100]!,

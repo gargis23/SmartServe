@@ -14,7 +14,7 @@ class MenuDetailScreen extends StatefulWidget {
 }
 
 class _MenuDetailScreenState extends State<MenuDetailScreen> {
-  double _spiceLevel = 1;
+  double _customizationLevel = 1;
   int _quantity = 1;
   bool _isDescriptionExpanded = false; // Controls the Read More state
 
@@ -172,35 +172,55 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
                         const SizedBox(height: 32),
 
                         // Customization
-                        Text('Spice Level', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 16),
-                        SliderTheme(
-                          data: SliderThemeData(
-                            activeTrackColor: const Color(0xFFFF6B6B),
-                            inactiveTrackColor: Colors.red[100],
-                            thumbColor: const Color(0xFFFF6B6B),
-                            overlayColor: const Color(0xFFFF6B6B).withOpacity(0.2),
-                            trackHeight: 6,
-                          ),
-                          child: Slider(
-                            value: _spiceLevel,
-                            min: 0,
-                            max: 2,
-                            divisions: 2,
-                            onChanged: (val) => setState(() => _spiceLevel = val),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Mild', style: GoogleFonts.inter(color: _spiceLevel == 0 ? Colors.black87 : Colors.grey, fontWeight: _spiceLevel == 0 ? FontWeight.bold : FontWeight.normal)),
-                              Text('Medium', style: GoogleFonts.inter(color: _spiceLevel == 1 ? Colors.black87 : Colors.grey, fontWeight: _spiceLevel == 1 ? FontWeight.bold : FontWeight.normal)),
-                              Text('Hot', style: GoogleFonts.inter(color: _spiceLevel == 2 ? const Color(0xFFFF6B6B) : Colors.grey, fontWeight: _spiceLevel == 2 ? FontWeight.bold : FontWeight.normal)),
-                            ],
-                          ),
-                        ),
+                        // --- SMART CUSTOMIZATION SECTION ---
+                    Builder(
+                      builder: (context) {
+                        bool isBeverage = widget.item.category.toLowerCase() == 'beverages';
+                        bool isDessert = widget.item.category.toLowerCase() == 'desserts';
+
+                        String title = isBeverage ? 'Cup Size' : (isDessert ? 'Sweetness' : 'Spice Level');
+                        List<String> labels = isBeverage 
+                            ? ['Regular', 'Large', 'Venti'] 
+                            : (isDessert ? ['Normal', 'Extra Sweet', 'Add Ice Cream'] : ['Mild', 'Medium', 'Hot']);
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Customization', style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+                            const SizedBox(height: 16),
+                            Text(title, style: GoogleFonts.inter(fontSize: 14, color: Colors.grey[600])),
+                            SliderTheme(
+                              data: SliderThemeData(
+                                activeTrackColor: const Color(0xFFFF6B6B),
+                                inactiveTrackColor: Colors.red[100],
+                                thumbColor: const Color(0xFFFF6B6B),
+                                overlayColor: const Color(0xFFFF6B6B).withOpacity(0.2),
+                                trackHeight: 6,
+                              ),
+                              child: Slider(
+                                value: _customizationLevel,
+                                min: 0,
+                                max: 2,
+                                divisions: 2,
+                                onChanged: (val) => setState(() => _customizationLevel = val),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 10),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(labels[0], style: GoogleFonts.inter(color: _customizationLevel == 0 ? Colors.black87 : Colors.grey, fontWeight: _customizationLevel == 0 ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+                                  Text(labels[1], style: GoogleFonts.inter(color: _customizationLevel == 1 ? Colors.black87 : Colors.grey, fontWeight: _customizationLevel == 1 ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+                                  Text(labels[2], style: GoogleFonts.inter(color: _customizationLevel == 2 ? const Color(0xFFFF6B6B) : Colors.grey, fontWeight: _customizationLevel == 2 ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                    ),
+                    // --- END SMART CUSTOMIZATION ---
                       ],
                     ),
                   ),

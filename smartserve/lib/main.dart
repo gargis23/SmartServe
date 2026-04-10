@@ -32,14 +32,16 @@ class SmartServeApp extends StatelessWidget {
       title: 'SmartServe',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.orange,
-          primary: Colors.orange,
+          // FIX: Updated from Colors.orange to our brand color
+          seedColor: const Color(0xFFFF6B6B),
+          primary: const Color(0xFFFF6B6B),
         ),
         useMaterial3: true,
         // Global styling for buttons to match the PRD branding
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
+            // FIX: Updated to brand color
+            backgroundColor: const Color(0xFFFF6B6B),
             foregroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
