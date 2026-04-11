@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 // Import your Menu screen
 import '../menu/menu_home_screen.dart';
 // Import Member 1's Profile screen (Adjust the path if needed based on your structure)
-import '../profile/profile_screen.dart'; 
+import '../profile/profile_screen.dart';
+// Import the Cart screen
+import '../cart/cart_screen.dart'; 
 
 class StudentMainScreen extends StatefulWidget {
   const StudentMainScreen({Key? key}) : super(key: key);
@@ -17,7 +19,7 @@ class _StudentMainScreenState extends State<StudentMainScreen> {
   // The list of screens for the bottom navigation
   final List<Widget> _screens = [
     const MenuHomeScreen(), // Index 0: Your Menu!
-    const Center(child: Text('Cart (Member 3 Task)')), // Index 1: Placeholder for Cart
+    const CartScreen(), // Index 1: Cart (Member 3 Task)
     const ProfileScreen(), // Index 2: Member 1's Profile
   ];
 

@@ -8,6 +8,7 @@ import '../../models/menu_item_model.dart';
 import '../../services/menu_service.dart';
 import '../auth/login_screen.dart'; // Member 1's login screen
 import 'add_menu_item_screen.dart';
+import 'staff_order_dashboard.dart';
 
 class StaffDashboard extends StatefulWidget {
   const StaffDashboard({Key? key}) : super(key: key);
@@ -16,8 +17,21 @@ class StaffDashboard extends StatefulWidget {
   State<StaffDashboard> createState() => _StaffDashboardState();
 }
 
-class _StaffDashboardState extends State<StaffDashboard> {
+class _StaffDashboardState extends State<StaffDashboard> with SingleTickerProviderStateMixin {
   final MenuService _menuService = MenuService();
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +41,15 @@ class _StaffDashboardState extends State<StaffDashboard> {
         backgroundColor: Colors.white,
         elevation: 1,
         title: Text(
-          'Manage Menu',
+          'Staff Dashboard',
           style: GoogleFonts.poppins(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
+            Tab(icon: Icon(Icons.assignment), text: 'Orders'),
+          ],
         ),
         actions: [
           IconButton(
@@ -49,44 +70,58 @@ class _StaffDashboardState extends State<StaffDashboard> {
       ),
       
       // Floating Action Button to Add New Items (We will build this next!)
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigates to your new form!
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddMenuItemScreen()),
-          );
-        },
-        backgroundColor: const Color(0xFFFF6B6B),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text('Add Item', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+      floatingActionButton: _tabController.index == 0
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                // Navigates to your new form!
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddMenuItemScreen()),
+                );
+              },
+              backgroundColor: const Color(0xFFFF6B6B),
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: Text('Add Item', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: Colors.white)),
+            )
+          : null,
+
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // Menu Management Tab
+          _buildMenuManagementTab(),
+          // Order Management Tab
+          const StaffOrderDashboard(),
+        ],
       ),
+    );
+  }
 
-      body: StreamBuilder<List<MenuItem>>(
-        stream: _menuService.getMenuItems(), // Fetching ALL items
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(child: Text('No menu items yet.', style: GoogleFonts.inter()));
-          }
+  Widget _buildMenuManagementTab() {
+    return StreamBuilder<List<MenuItem>>(
+      stream: _menuService.getMenuItems(), // Fetching ALL items
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No menu items yet.', style: GoogleFonts.inter()));
+        }
 
-          final items = snapshot.data!;
+        final items = snapshot.data!;
 
-          return ListView.builder(
-            padding: const EdgeInsets.only(bottom: 80, top: 16), // Padding for the FAB
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return _buildStaffItemCard(item);
-            },
-          );
-        },
-      ),
+        return ListView.builder(
+          padding: const EdgeInsets.only(bottom: 80, top: 16), // Padding for the FAB
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            final item = items[index];
+            return _buildStaffItemCard(item);
+          },
+        );
+      },
     );
   }
 

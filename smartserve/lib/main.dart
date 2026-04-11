@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 // Import your existing screens
@@ -13,6 +14,10 @@ import 'screens/staff/staff_dashboard.dart';
 // Add the import for your new Menu Home Screen!
 import 'screens/menu/menu_home_screen.dart'; 
 import 'screens/home/student_main_screen.dart';
+// Import providers
+import 'providers/cart_provider.dart';
+// Import order tracking screen
+import 'screens/cart/order_tracking_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,27 +32,42 @@ class SmartServeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'SmartServe',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          // FIX: Updated from Colors.orange to our brand color
-          seedColor: const Color(0xFFFF6B6B),
-          primary: const Color(0xFFFF6B6B),
-        ),
-        useMaterial3: true,
-        // Global styling for buttons to match the PRD branding
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            // FIX: Updated to brand color
-            backgroundColor: const Color(0xFFFF6B6B),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'SmartServe',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            // FIX: Updated from Colors.orange to our brand color
+            seedColor: const Color(0xFFFF6B6B),
+            primary: const Color(0xFFFF6B6B),
+          ),
+          useMaterial3: true,
+          // Global styling for buttons to match the PRD branding
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              // FIX: Updated to brand color
+              backgroundColor: const Color(0xFFFF6B6B),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           ),
         ),
+        home: const AuthGate(),
+        onGenerateRoute: (settings) {
+          if (settings.name == '/order-tracking') {
+            return MaterialPageRoute(
+              builder: (_) => OrderTrackingScreen(
+                orderId: settings.arguments as String?,
+              ),
+            );
+          }
+          return null;
+        },
       ),
-      home: const AuthGate(),
     );
   }
 }

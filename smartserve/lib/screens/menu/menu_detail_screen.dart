@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:provider/provider.dart';
 import '../../models/menu_item_model.dart';
+import '../../providers/cart_provider.dart';
 
 class MenuDetailScreen extends StatefulWidget {
   final MenuItem item;
@@ -270,7 +272,7 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
             const SizedBox(width: 24),
             Expanded(
               child: ElevatedButton(
-                onPressed: widget.item.isAvailable ? () {} : null,
+                onPressed: widget.item.isAvailable ? () => _addToCart(context) : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: widget.item.isAvailable ? const Color(0xFFFF6B6B) : Colors.grey,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -306,5 +308,48 @@ class _MenuDetailScreenState extends State<MenuDetailScreen> {
         Text(text, style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
       ],
     );
+  }
+
+  void _addToCart(BuildContext context) {
+    // Build customizations map
+    final customizations = <String, String>{};
+    
+    bool isBeverage = widget.item.category.toLowerCase() == 'beverages';
+    bool isDessert = widget.item.category.toLowerCase() == 'desserts';
+    
+    if (isBeverage) {
+      List<String> sizes = ['Regular', 'Large', 'Venti'];
+      customizations['size'] = sizes[_customizationLevel.toInt()];
+    } else if (isDessert) {
+      List<String> sweetness = ['Normal', 'Extra Sweet', 'Add Ice Cream'];
+      customizations['sweetness'] = sweetness[_customizationLevel.toInt()];
+    } else {
+      List<String> spiceLevels = ['Mild', 'Medium', 'Hot'];
+      customizations['spice_level'] = spiceLevels[_customizationLevel.toInt()];
+    }
+
+    // Add to cart
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    cartProvider.addItem(
+      widget.item,
+      customizations: customizations,
+    );
+
+    // Show feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${widget.item.name} added to cart!'),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'View Cart',
+          onPressed: () {
+            // This will be handled by the StudentMainScreen navigation
+          },
+        ),
+      ),
+    );
+
+    // Pop the detail screen
+    Navigator.pop(context);
   }
 }
