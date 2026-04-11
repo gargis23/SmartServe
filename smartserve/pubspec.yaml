@@ -33,6 +33,7 @@ dependencies:
   firebase_core: ^3.0.0
   firebase_auth: ^5.0.0
   cloud_firestore: ^5.0.0
+  firebase_messaging: ^15.2.4
   provider: ^6.1.1  # For State Management
 
   # The following adds the Cupertino Icons font to your application.
@@ -42,6 +43,8 @@ dependencies:
   google_fonts: ^6.1.0
   flutter_staggered_animations: ^1.1.1
   shimmer: ^3.0.0
+  fl_chart: ^0.69.0
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:

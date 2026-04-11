@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/menu_item_model.dart';
 import '../../services/menu_service.dart';
+import '../../services/recommendation_service.dart';
 import '../../widgets/menu_item_card.dart';
 import 'menu_detail_screen.dart';
 
@@ -16,6 +19,7 @@ class MenuHomeScreen extends StatefulWidget {
 
 class _MenuHomeScreenState extends State<MenuHomeScreen> {
   final MenuService _menuService = MenuService();
+  final RecommendationService _recommendationService = RecommendationService();
   String selectedCategory = 'All';
   final List<String> categories = ['All', 'Meals', 'Snacks', 'Beverages', 'Desserts'];
   
@@ -24,11 +28,58 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
   String searchQuery = '';
   bool _vegOnly = false;
   double _maxPrice = 500.0; // High default so it shows everything initially
+  List<MenuItem> _recommendedItems = [];
+  bool _isLoadingRecommendations = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecommendations();
+  }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRecommendations() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingRecommendations = true;
+    });
+
+    try {
+      final items = await _recommendationService.getPersonalizedRecommendations(
+        userId: user.uid,
+        limit: 6,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _recommendedItems = items;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _recommendedItems = [];
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingRecommendations = false;
+        });
+      }
+    }
   }
 
   // Opens the Advanced Filter Bottom Sheet
@@ -236,6 +287,8 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
               children: [
                 Text('What are you\ncraving today?', style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, height: 1.2)),
                 const SizedBox(height: 24),
+                _buildRecommendationSection(),
+                const SizedBox(height: 20),
                 _buildSearchBar(),
                 _buildCategoryList(),
               ],
@@ -306,6 +359,182 @@ class _MenuHomeScreenState extends State<MenuHomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecommendationSection() {
+    if (_isLoadingRecommendations) {
+      return const SizedBox(
+        height: 120,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_recommendedItems.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.amber[700]),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                'Add a few orders and your personalized recommendations will appear here.',
+                style: GoogleFonts.inter(fontSize: 13, color: Colors.black87),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'For You',
+              style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            TextButton.icon(
+              onPressed: _loadRecommendations,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Refresh'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 140,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: _recommendedItems.length,
+            separatorBuilder: (_, separatorIndex) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final item = _recommendedItems[index];
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => MenuDetailScreen(item: item)),
+                  );
+                },
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 220,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: CachedNetworkImage(
+                            imageUrl: item.imageUrl,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) {
+                              return Shimmer.fromColors(
+                                baseColor: Colors.grey[300]!,
+                                highlightColor: Colors.grey[100]!,
+                                child: Container(color: Colors.white),
+                              );
+                            },
+                            errorWidget: (context, url, error) {
+                              return Container(
+                                color: Colors.grey[300],
+                                child: Icon(
+                                  Icons.fastfood,
+                                  size: 36,
+                                  color: Colors.grey[700],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.08),
+                                  Colors.black.withValues(alpha: 0.65),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          left: 12,
+                          right: 12,
+                          bottom: 12,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                item.name,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.category,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Rs ${item.price.toStringAsFixed(0)}',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

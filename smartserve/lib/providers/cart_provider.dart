@@ -23,13 +23,15 @@ class CartProvider extends ChangeNotifier {
     MenuItem menuItem, {
     Map<String, String>? customizations,
   }) {
+    final incomingCustomizations = customizations ?? <String, String>{};
+
     // Check if item already exists in cart
     final existingIndex = _items.indexWhere((item) => item.itemId == menuItem.itemId);
 
     if (existingIndex >= 0) {
       // Increase quantity if customizations are the same
       final existingItem = _items[existingIndex];
-      if (customizations == existingItem.customizations || customizations == null) {
+      if (mapEquals(incomingCustomizations, existingItem.customizations)) {
         _items[existingIndex] = existingItem.copyWith(
           quantity: existingItem.quantity + 1,
         );
@@ -42,7 +44,7 @@ class CartProvider extends ChangeNotifier {
             price: menuItem.price,
             imageUrl: menuItem.imageUrl,
             quantity: 1,
-            customizations: customizations ?? {},
+            customizations: incomingCustomizations,
           ),
         );
       }
@@ -55,7 +57,7 @@ class CartProvider extends ChangeNotifier {
           price: menuItem.price,
           imageUrl: menuItem.imageUrl,
           quantity: 1,
-          customizations: customizations ?? {},
+          customizations: incomingCustomizations,
         ),
       );
     }

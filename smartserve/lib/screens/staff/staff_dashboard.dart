@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:smartserve/screens/staff/add_menu_item_screen.dart';
 import '../../models/menu_item_model.dart';
 import '../../services/menu_service.dart';
-import '../auth/login_screen.dart'; // Member 1's login screen
 import 'add_menu_item_screen.dart';
 import 'staff_order_dashboard.dart';
+import 'inventory_alerts_screen.dart';
 
 class StaffDashboard extends StatefulWidget {
   const StaffDashboard({Key? key}) : super(key: key);
@@ -24,7 +23,12 @@ class _StaffDashboardState extends State<StaffDashboard> with SingleTickerProvid
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this)
+      ..addListener(() {
+        if (mounted) {
+          setState(() {});
+        }
+      });
   }
 
   @override
@@ -49,6 +53,7 @@ class _StaffDashboardState extends State<StaffDashboard> with SingleTickerProvid
           tabs: const [
             Tab(icon: Icon(Icons.restaurant_menu), text: 'Menu'),
             Tab(icon: Icon(Icons.assignment), text: 'Orders'),
+            Tab(icon: Icon(Icons.inventory_2_outlined), text: 'Inventory'),
           ],
         ),
         actions: [
@@ -92,6 +97,8 @@ class _StaffDashboardState extends State<StaffDashboard> with SingleTickerProvid
           _buildMenuManagementTab(),
           // Order Management Tab
           const StaffOrderDashboard(),
+          // Member 4 Inventory Alerts
+          const InventoryAlertsScreen(),
         ],
       ),
     );

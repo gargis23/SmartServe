@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'user_management_screen.dart'; // We will create this next
+import 'analytics_dashboard_screen.dart';
 
 class AdminDashboard extends StatelessWidget {
   const AdminDashboard({super.key});
@@ -41,12 +42,18 @@ class AdminDashboard extends StatelessWidget {
                 },
               ),
             ),
-            // Placeholder for Member 4's Analytics
-            const Card(
+            Card(
               child: ListTile(
-                leading: Icon(Icons.analytics, color: Colors.blue),
-                title: Text("Canteen Analytics"),
-                subtitle: Text("Coming soon (Member 4 task)"),
+                leading: const Icon(Icons.analytics, color: Colors.blue),
+                title: const Text("Canteen Analytics"),
+                subtitle: const Text("Revenue, trends, and demand insights"),
+                trailing: const Icon(Icons.arrow_forward_ios),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AnalyticsDashboardScreen()),
+                  );
+                },
               ),
             ),
           ],

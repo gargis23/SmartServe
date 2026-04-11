@@ -7,17 +7,15 @@ import 'firebase_options.dart';
 
 // Import your existing screens
 import 'screens/auth/login_screen.dart';
-import 'screens/profile/profile_screen.dart';
 // Import your new Role-Based screens
 import 'screens/admin/admin_dashboard.dart'; 
 import 'screens/staff/staff_dashboard.dart';
-// Add the import for your new Menu Home Screen!
-import 'screens/menu/menu_home_screen.dart'; 
 import 'screens/home/student_main_screen.dart';
 // Import providers
 import 'providers/cart_provider.dart';
 // Import order tracking screen
 import 'screens/cart/order_tracking_screen.dart';
+import 'services/app_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -87,6 +85,8 @@ class AuthGate extends StatelessWidget {
 
         if (authSnapshot.hasData) {
           final String uid = authSnapshot.data!.uid;
+
+          AppNotificationService().initialize();
 
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance.collection('users').doc(uid).get(),

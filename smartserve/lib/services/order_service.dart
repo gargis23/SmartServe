@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/order_model.dart';
 import '../models/cart_item_model.dart';
+import 'app_notification_service.dart';
 
 class OrderService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final AppNotificationService _notificationService = AppNotificationService();
 
   // Create a new order
   Future<String> createOrder({
@@ -18,7 +20,7 @@ class OrderService {
     try {
       // Calculate estimated preparation time based on items
       double maxPrepTime = 0;
-      for (var item in items) {
+      for (final _ in items) {
         // You can expand this logic to include item-specific prep times
         maxPrepTime = maxPrepTime + 5; // 5 minutes per item as baseline
       }
@@ -39,6 +41,18 @@ class OrderService {
       );
 
       final docRef = await _db.collection('orders').add(order.toMap());
+
+      await _notificationService.createNotification(
+        userId: userId,
+        title: 'Order placed successfully',
+        body: 'Order #${docRef.id.substring(0, 8).toUpperCase()} is now pending confirmation.',
+        type: 'order',
+        metadata: {
+          'orderId': docRef.id,
+          'status': 'pending',
+        },
+      );
+
       return docRef.id;
     } catch (e) {
       print('Error creating order: $e');
@@ -112,9 +126,27 @@ class OrderService {
   // Update order status (for staff)
   Future<void> updateOrderStatus(String orderId, FoodOrderStatus status) async {
     try {
+      final orderDoc = await _db.collection('orders').doc(orderId).get();
       await _db.collection('orders').doc(orderId).update({
         'status': status.toString().split('.').last,
       });
+
+      if (orderDoc.exists) {
+        final data = orderDoc.data() as Map<String, dynamic>;
+        final userId = (data['userId'] ?? '').toString();
+        if (userId.isNotEmpty) {
+          await _notificationService.createNotification(
+            userId: userId,
+            title: 'Order status updated',
+            body: 'Order #${orderId.substring(0, 8).toUpperCase()} is now ${_formatOrderStatus(status)}.',
+            type: 'order_status',
+            metadata: {
+              'orderId': orderId,
+              'status': status.toString().split('.').last,
+            },
+          );
+        }
+      }
     } catch (e) {
       print('Error updating order status: $e');
       rethrow;
@@ -148,12 +180,47 @@ class OrderService {
   // Cancel order
   Future<void> cancelOrder(String orderId) async {
     try {
+      final orderDoc = await _db.collection('orders').doc(orderId).get();
       await _db.collection('orders').doc(orderId).update({
         'status': 'cancelled',
       });
+
+      if (orderDoc.exists) {
+        final data = orderDoc.data() as Map<String, dynamic>;
+        final userId = (data['userId'] ?? '').toString();
+        if (userId.isNotEmpty) {
+          await _notificationService.createNotification(
+            userId: userId,
+            title: 'Order cancelled',
+            body: 'Order #${orderId.substring(0, 8).toUpperCase()} was cancelled.',
+            type: 'order_status',
+            metadata: {
+              'orderId': orderId,
+              'status': 'cancelled',
+            },
+          );
+        }
+      }
     } catch (e) {
       print('Error cancelling order: $e');
       rethrow;
+    }
+  }
+
+  String _formatOrderStatus(FoodOrderStatus status) {
+    switch (status) {
+      case FoodOrderStatus.pending:
+        return 'pending';
+      case FoodOrderStatus.confirmed:
+        return 'confirmed';
+      case FoodOrderStatus.preparing:
+        return 'preparing';
+      case FoodOrderStatus.ready:
+        return 'ready for pickup';
+      case FoodOrderStatus.completed:
+        return 'completed';
+      case FoodOrderStatus.cancelled:
+        return 'cancelled';
     }
   }
 
